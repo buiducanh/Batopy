@@ -27,17 +27,16 @@ def insert_into(db, table, columns, values):
             return ', '.join(x).encode('utf-8')
         else:
             return x.encode('utf-8')
-    print columns, values
     columns = serialize(columns, False)
     qmarks = '?'
     if type(values) is not tuple:
         if type(values) is str or type(values) is unicode:
             values = (values.encode('utf-8'),)
         else:
-            values = tuple(values, )
+            values = tuple(values)
     for _ in xrange(len(values) - 1):
         qmarks += ', ?'
     db.execute(insert_query.format(
-    table, columns=columns, values=qmarks
+        table, columns=columns, values=qmarks
     ), values)
     db.commit()
