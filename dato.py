@@ -65,27 +65,13 @@ def populate_manga():
                                    not None, attributes_list),
                             values)
 
-    for manga in grouped_mangas.values():
         for genre in manga['genres']:
             batosql.insert_into(conn, 'genres', 'name', genre)
 
-    associate_manga_to_genre_query = '''
-    INSERT OR IGNORE INTO mangas_genres(manga_id, genre_id)
-    SELECT m.id, g.id
-    FROM
-        mangas as m,
-        genres as g
-    WHERE
-        NOT EXISTS (
-        SELECT mg.manga_id, mg.genre_id
-        FROM mangas_genres as mg
-        WHERE mg.manga_id = m.id
-        AND mg.genre_id = g.id
-        )
-        AND m.name = ?
-        AND g.name = ?
-    '''
-
+    associate_manga_to_genre_query = batosql.get_many_to_many_query('mangas',
+                                                                    'genres',
+                                                                    'name',
+                                                                    'name')
     for manga in grouped_mangas.values():
         conn.executemany(associate_manga_to_genre_query,
                          iter(map(lambda x: (manga['name'], x),
