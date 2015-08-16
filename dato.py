@@ -2,13 +2,16 @@ import sqlite3
 import json
 import pprint
 import batosql
+import pdb
 
 pp = pprint.PrettyPrinter()
 conn = sqlite3.connect('tmp/bato.sqlite')
+conn.text_factory = sqlite3.OptimizedUnicode
 conn.execute("PRAGMA foreign_keys=ON;")
 hash_of_tables = {
     'mangas': 'id integer PRIMARY KEY, name text UNIQUE NOT NULL,\
- link text NOT NULL',
+ link text NOT NULL, type text NOT NULL, status text NOT NULL, \
+ description text NOT NULL',
     'genres': 'id integer PRIMARY KEY, name text UNIQUE NOT NULL',
     'authors': 'id integer PRIMARY KEY, name text UNIQUE NOT NULL',
     'artists': 'id integer PRIMARY KEY, name text UNIQUE NOT NULL',
@@ -50,9 +53,17 @@ for manga in mangas_json:
 
 def populate_manga():
 
+    attributes_list = ['name', 'link', 'type', 'status', 'description']
     for manga in grouped_mangas.values():
-        batosql.insert_into(conn, 'mangas',
-                            ['name', 'link'], (manga['name'], manga['link']))
+        values = reduce(
+            lambda x, y: x + (manga[y], ) if manga[y] is not None else x,
+            attributes_list, tuple())
+        values = map(batosql.serialize, values)
+        batosql.insert_into(conn,
+                            'mangas',
+                            filter(lambda x: manga[x] is
+                                   not None, attributes_list),
+                            values)
 
     for manga in grouped_mangas.values():
         for genre in manga['genres']:
